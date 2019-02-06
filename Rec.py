@@ -6,6 +6,18 @@ import os
 import imageio
 from scipy import misc
 import glob
+# triangulation algorithm used to iterate over datapoints
+Class Computations(data):
+    def __init__(self,P1,P2, p1, p2, structure):
+		self.P1 = P1
+        self.P2 = P2
+        self.p1=p1
+        self.p2=p2
+        self.structure=structure
+        def triangulation(self):
+    # maybe create 3xN vector of length points to fill or actually 4xN length...proj
+            self.structure = cv2.triangulatePoints(self.P1, self.P2, self.p1, self.p2)
+            return self.structure /= self.structure[3]
 
 ##### Parameters: image_location == directory    size = (x,y) vector containing dimensions of keyboard
 
@@ -118,14 +130,10 @@ def compute_projections(K1,K2,R_T):
 
 ###### pp1, pp2 are coordinate pairs to be transformed
 
-def triangulation(p1,p2,pp1,pp2,true_points=None):
-    # maybe create 3xN vector of length points to fill or actually 4xN length...proj
-    true_points = cv2.triangulatePoints(projMatr1, projMatr2, projPoints1, projPoints2)
-    return true_points /= true_points[3]
 
-def translate():
-    
-    
+def translate(P1,P2,p1,p2,structure):
+    translations=Computations(P1,P2,p1,p2,structure)
+    coordinates = Computations.triangulation()
     return coordinates
 
 def load_data(DLC_array):
