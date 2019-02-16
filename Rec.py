@@ -6,28 +6,22 @@ import os
 import imageio
 from scipy import misc
 import glob
-# triangulation algorithm used to iterate over datapoints
-Class Computations(data):
-    def __init__(self,P1,P2, p1, p2, structure):
-		self.P1 = P1
-        self.P2 = P2
-        self.p1=p1
-        self.p2=p2
-        self.structure=structure
-        def triangulation(self):
-    # maybe create 3xN vector of length points to fill or actually 4xN length...proj
-            self.structure = cv2.triangulatePoints(self.P1, self.P2, self.p1, self.p2)
-            return self.structure /= self.structure[3]
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 ##### Parameters: image_location == directory    size = (x,y) vector containing dimensions of keyboard
 
-def Checkerboard(image_location, size, save = False, savename=None):
+def Checkerboard(image_location, size, save = False,units=None, savename=None):
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
     objp = np.zeros((size[1]*size[0],3), np.float32)
-    objp[:,:2] = np.mgrid[0:size[0],0:size[1]].T.reshape(-1,2)
-
+    
+    objp[:,:2] = np.mgrid[0:size[0],0:size[1]].T.reshape(-1,2) * units
+    if units:
+        objp[:,:2] = objp[:,:2]* units # code to translate calibration into real world units 
+    # depending measurements of single side of chessboard, should be in 'mm'
+    
 # Arrays to store object points and image points from all the images.
     objpoints = [] # 3d point in real world space
     imgpoints = [] # 2d points in image plane.
@@ -118,10 +112,20 @@ def trans_rotation(image_loc,size,mtx,dist):
     return R_T, inliers
 
 ###### Parameters:    K1, K2 are 
-###### R_T is computed above  
+###### R_T is computed above 
+
+def compute_RT(rvecs):
+    rotation_mat = np.zeros(shape=(3, 3))
+    R_b = cv2.Rodrigues(rvecs_b, rotation_mat)[0]
+    return R_b
+
 def compute_projections(K1,K2,R_T):
-    p1 = K1 * Identity
-    p2 = K2 * R_T
+    p1 = K1 * np.identity(3)
+    zero_string = [0,0,0]
+    zero_string = np.array(zero_string)
+    p1 = np.column_stack((p1,zero_string))
+    p2 = np.matmul(K_2,  R_T)
+    
     return p1,p2
 
 
@@ -130,13 +134,44 @@ def compute_projections(K1,K2,R_T):
 
 ###### pp1, pp2 are coordinate pairs to be transformed
 
+def triangulation(p1,p2,pp1,pp2):
+    # maybe create 3xN vector of length points to fill or actually 4xN length...proj
+    true_points = cv2.triangulatePoints(projMatr1, projMatr2, projPoints1, projPoints2)
+    return true_points
 
-def translate(P1,P2,p1,p2,structure):
-    translations=Computations(P1,P2,p1,p2,structure)
-    coordinates = Computations.triangulation()
-    return coordinates
+def translate(p1,p2,handle_1_coords,handle_2_coords):
+    tupad = []
+    for i in range(0,len(handle_1_coords)):
+        tupac.append(triangulation(p1,p2,handle_1_coords[i,:],handle_2_coords[i]))
+    
+    coordinates = tupac / tupac[3] # Normalize returned coordinates
+    coordinates = np.array(coordinates)
+    true_gate = []
+    for i in range(0,434):
+        true_gate.append(coordinates[i,:,0])
+    true_gate = np.array(true_gate)
+    return true_gate
 
 def load_data(DLC_array):
     data = pd.read_hdf(DLC_array)
     return data
 
+
+def scatter(data,title,save_id=None):
+    df = pd.DataFrame(data, columns=list('XYZ1'))
+    
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(df['X'], df['Y'], df['Z'], c='skyblue', s=60)
+    plt.xlabel('Reformed Coordinates in X')
+    plt.ylabel('Reformed Coordinates in Y')
+    ax.set_zlabel('Reformed Coordinates in Z')
+    ax.set_ylim(-250,200)
+    ax.set_xlim(-250,200)
+    ax.set_zlim(-240,240)
+    plt.title(title)
+    if save_id:
+        plt.savefig(save_id)
+
+    plt.show()
