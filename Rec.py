@@ -16,14 +16,21 @@ import cv2
 def calc_calibration(image_location, size, show = False, save = False, savename=None):
 	'''
 	Calculates Calibration matrix for a given camera. 
-
-	:param str image_location: Directory containing images taken by a given camera
-	:param str size: (rows,columns) vector containing dimensions of chessboard
-	:param bool show: True displays images with corners found. False does not display any images.
-	:param bool save: True serializes calibration parameters after they are calculated. False does not.
-	:param str savename: Filename of serialized calibration parameters. 
-	:return: ?
-	:rtype: ?
+	
+	Parameters: 
+		image_location (str): Directory containing images taken by a given camera
+		size (tup of ints) : (rows,columns) vector containing dimensions of chessboard
+		show (bool): True displays images with corners found. False does not display any images.
+		save (bool): True serializes calibration parameters after they are calculated. False does not.
+		savename (str): Filename of serialized calibration parameters. 
+	
+	Returns: 
+		ret (double): Nonzero if a pattern is obtained
+		mtx (np.array): Camera Matrix with intrinsic parameters
+		dist (np.array): Matrix of distortion Coefficients
+		rvecs (np.array): Rotation Vectors
+		tvecs (np.array): Translation Vectors
+		error_term (double): Reprojection Error 
 	'''
 	criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 	# prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
@@ -72,9 +79,20 @@ def calc_calibration(image_location, size, show = False, save = False, savename=
 			pickle.dump(calib_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 	return ret, mtx, dist, rvecs, tvecs, error_term
 
+def load_calib_data(filename):
+	'''
+	Loads previously saved calibration data
 
-	####### mtx,dist are camera matrices and distortion from above function, rvecs and tvecs are rotation and translation vectors ######
-	###### error_term is mean error calculated in final lines of code ######
+	Parameters: 
+		filename (str): Filename of pickled calibration data
+
+	Returns: 
+		data (dict): Dictionary that contains calibration data 
+	'''
+	opened = open(filename,'rb')
+	data = pickle.load(opened)
+	opened.close()
+	return data
 	
 ##### Parameters: image_loc == directory information    size is (x,y) array containing # of checkerboards in pattern
 ##### mtx is camera matrix found above, dist is distortion coeffecient found above    
